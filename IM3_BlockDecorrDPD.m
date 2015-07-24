@@ -20,7 +20,7 @@ IM3Filter  = firpm(N, [0 Fpass Fstop Fs/2]/(Fs/2), [1 1 0 0], [Wpass Wstop], ...
 if MemoryLessDPD
     NumSamples = 1000000; % Total number of samples used for learning
     NumBlocks = floor(NumSamples/DPD_FilteringBlockSize);
-    Mu = 0.5;
+    Mu = 1;
     AdaptiveFilterDelay = 1;
     LMSInput = IM3_Basis_Orthogonal;
     W = zeros(NumberOfBasisFunctions,AdaptiveFilterDelay);

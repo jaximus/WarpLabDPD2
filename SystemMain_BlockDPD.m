@@ -51,11 +51,11 @@ MAX_TX_LEN     = 2^25;                 % 2^14 =    16384 --> Max TX / RX length 
                                        % 2^25 = 33554432 --> Soft max TX / RX length for WARP v3 MEX Transport (WARPLab 7.5.x)
 % RX variables
 USE_AGC        = false;
-ManualRxGainRF = 2;                    % Rx RF Gain in [1:3] (ignored if USE_AGC is true)
-ManualRxGainBB = 7;                    % Rx Baseband Gain in [0:31] (ignored if USE_AGC is true)
+ManualRxGainRF = 1;                    % Rx RF Gain in [1:3] (ignored if USE_AGC is true)
+ManualRxGainBB = 20;                    % Rx Baseband Gain in [0:31] (ignored if USE_AGC is true)
 
 % TX variables
-BB_GAIN = 1;                           %Must be integer in [0,1,2,3] for approx ![-5, -3, -1.5, 0]dB baseband gain
+BB_GAIN = 3;                           %Must be integer in [0,1,2,3] for approx ![-5, -3, -1.5, 0]dB baseband gain
 RF_GAIN = 55;                          %Must be integer in [0:63] for approx [0:31]dB RF gain
 
 
@@ -144,7 +144,7 @@ Ts_RSSI = 1/(wl_basebandCmd(nodes(1),'rx_rssi_clk_freq'));
 % TX_PowerScale = sqrt(10^((PA_Power_Measured-Pout_dBm)/10));
 % RMS_PAin = sqrt(mean(abs(LTE_Signal).^2));
 % ScalingForPA = 1/(RMS_PAin*TX_PowerScale);
-ScalingForPA = 10;
+ScalingForPA = 6;
 PA_InputSignal = LTE_Signal*ScalingForPA; 
 CC1 = CC1*ScalingForPA; 
 CC2 = CC2*ScalingForPA;
