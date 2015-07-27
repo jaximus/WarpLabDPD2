@@ -25,7 +25,7 @@ MemoryLessPA                        =   1;          % 1- MemoryLess PA model
 MemoryLessDPD                       =   1;          % 1- MemoryLess DPD
                                                     % 0- MemoryDPD
 
-DoTraining = 1;                                     %To set alpha yourself. No training                                               
+DoTraining = 0;                                     %To set alpha yourself. No training                                               
 IM3_BlockDecorrDPD_Coeffs           = 0.5+0.125*i;  %For Memoryless Pretraining
 
 DPD_LearningBlockSize  = 100;                         % Decorrelating DPD Learning Block size
@@ -33,7 +33,6 @@ DPD_FilteringBlockSize = 1000;                       % Decorrelating DPD Filteri
 NumSamples = 5000000;                               % Total number of samples used for learning
 Mu = 1;                                             %LMS Gain
 
-ScalingForPA = 10;                              %Changes magnitude of PA input signal
 % PA_Power_Measured = 23;
 
 %% Baseband Tx signal paramters                                               
@@ -146,7 +145,7 @@ Ts_RSSI = 1/(wl_basebandCmd(nodes(1),'rx_rssi_clk_freq'));
 % TX_PowerScale = sqrt(10^((PA_Power_Measured-Pout_dBm)/10));
 % RMS_PAin = sqrt(mean(abs(LTE_Signal).^2));
 % ScalingForPA = 1/(RMS_PAin*TX_PowerScale);
-
+ScalingForPA = 10;
 PA_InputSignal = LTE_Signal*ScalingForPA; 
 CC1 = CC1*ScalingForPA; 
 CC2 = CC2*ScalingForPA;
