@@ -3,7 +3,7 @@ function LoopDelay = DPD_LoopDelayEst(PA_InputSignal, IM3GeneratedSignal, Memory
 
 % Third order IMD extraction filter, all frequency values are in MHz.
 Fs    = round(SystemFs/1e6);  % Sampling Frequency
-N     = 100;  % Order
+N     = 200;  % Order
 Fpass = (3*Signal_Bandwidth)/2; % Passband Frequency
 Fstop = (5*Signal_Bandwidth)/2; % Stopband Frequency
 Wpass = 1;    % Passband Weight
