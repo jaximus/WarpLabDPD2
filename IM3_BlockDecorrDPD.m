@@ -242,14 +242,6 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     
     linkaxes(ax,'xy')
     
-    if(USE_AGC)
-        RxGainRF = rx_gains(1);
-        RxGainBB = rx_gains(2);
-    else
-        RxGainRF = ManualRxGainRF;
-        RxGainBB = ManualRxGainBB;
-    end
-    
     PA_OutBlock = payload_vec;
     
     % Shift the PA output such that the IM3 frequency is at baseband
