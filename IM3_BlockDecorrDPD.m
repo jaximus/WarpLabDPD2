@@ -8,7 +8,7 @@ NumberOfBasisFunctions = length(IM3_Basis_Orthogonal(:,1));
 % Plotting variables
 %iq_range    = 1;                       % Plots IQ values in the range:  [-1, 1]
 %rssi_range  = 1024;                    % Plots RSSI values in the range:  [0, 1024]
-USE_PREAMBLE            = 1;
+USE_PREAMBLE            = 0;
 
 if(USE_WARP)
     warp_PA_delay       = 44;          %Delay only used if USE_PREAMBLE = 0 to throw away first 43 samples of rxIQ
@@ -293,7 +293,7 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     % Extract the IM3 block from the PA output in the feedback receiver
     ErrorBlock = IM3FilteredBlockDelayed(1:DPD_LearningBlockSize);
 end
-
+histogram(payload_ind_array)
 
 % Plot DPD filter taps convergence
 if MemoryLessDPD
