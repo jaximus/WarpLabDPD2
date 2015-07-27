@@ -122,7 +122,7 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     
     % Broadcast Block using WARPLAB
     PA_InBlock;
-    txData  = [PA_InBlock];
+    txData  = [preamble PA_InBlock];
     txLength = length(txData);
     
     % Set capture lengths
