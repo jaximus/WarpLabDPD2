@@ -121,7 +121,7 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     end
     
     % Broadcast Block using WARPLAB
-    PA_InBlock;
+    payload = PA_InBlock;
     txData  = [preamble PA_InBlock];
     txLength = length(txData);
     
@@ -157,7 +157,100 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     wl_basebandCmd(nodes, 'RF_ALL', 'tx_rx_buff_dis');
     wl_interfaceCmd(nodes, 'RF_ALL', 'tx_rx_dis');
     
-    PA_OutBlock = rx_IQ(43:43+DPD_FilteringBlockSize-1);
+    
+    %% Correlate for LTS
+    
+    % Complex cross correlation of Rx waveform with time-domain LTS
+    lts_corr = abs(conv(conj(fliplr(lts_t)), sign(rx_IQ)));
+    
+    % Skip early and late samples
+    lts_corr = lts_corr(32:end-32);
+    
+    % Find all correlation peaks
+    lts_peaks = find(lts_corr > LTS_CORR_THRESH*max(lts_corr));
+    
+    % Select best candidate correlation peak as LTS-payload boundary
+    [LTS1, LTS2] = meshgrid(lts_peaks,lts_peaks);
+    [lts_second_peak_index,y] = find(LTS2-LTS1 == length(lts_t));
+    
+    % Stop if no valid correlation peak was found
+    if(isempty(lts_second_peak_index))
+        fprintf('No LTS Correlation Peaks Found!\n');
+        return;
+    end
+    
+    % Set the sample indices of the payload symbols and preamble
+    payload_ind = lts_peaks(max(lts_second_peak_index))+32;
+    lts_ind = payload_ind-160;
+    
+    if(DO_APPLY_CFO_CORRECTION)
+        %Extract LTS (not yet CFO corrected)
+        rx_lts = rx_IQ(lts_ind : lts_ind+159);
+        rx_lts1 = rx_lts(-64+-FFT_OFFSET + [97:160]);
+        rx_lts2 = rx_lts(-FFT_OFFSET + [97:160]);
+        
+        %Calculate coarse CFO est
+        rx_cfo_est_lts = mean(unwrap(angle(rx_lts1 .* conj(rx_lts2))));
+        rx_cfo_est_lts = rx_cfo_est_lts/(2*pi*64);
+    else
+        rx_cfo_est_lts = 0;
+    end
+    
+    % Apply CFO correction to raw Rx waveform
+    rx_cfo_corr_t = exp(1i*2*pi*rx_cfo_est_lts*[0:length(rx_IQ)-1]);
+    rx_dec_cfo_corr = rx_IQ .* rx_cfo_corr_t.';
+    
+    % Re-extract LTS for channel estimate
+    rx_lts = rx_dec_cfo_corr(lts_ind : lts_ind+159);
+    rx_lts1 = rx_lts(-64+-FFT_OFFSET + [97:160]);
+    rx_lts2 = rx_lts(-FFT_OFFSET + [97:160]);
+    
+    rx_lts1_f = fft(rx_lts1);
+    rx_lts2_f = fft(rx_lts2);
+    
+    % Calculate channel estimate
+    rx_H_est = lts_f .* (rx_lts1_f.' + rx_lts2_f.')/2;
+    
+    %% Rx payload processing
+    
+    % Extract the payload samples (integral number of OFDM symbols following preamble)
+    payload_vec = rx_dec_cfo_corr(payload_ind : payload_ind+length(payload)-1);
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Visualize results
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    figure(1);clf;
+    ax(1) = subplot(2,2,1);
+    plot(0:(length(rx_IQ)-1),real(rx_IQ))
+    xlabel('Sample Index')
+    title('Received I')
+    axis([1 RXLength -iq_range iq_range])
+    
+    ax(2) = subplot(2,2,2);
+    plot(0:(length(rx_IQ)-1),imag(rx_IQ))
+    xlabel('Sample Index')
+    title('Received Q')
+    axis([1 RXLength -iq_range iq_range])
+    
+    linkaxes(ax,'xy')
+    
+    subplot(2,1,2)
+    plot(0:(length(rx_RSSI)-1),rx_RSSI)
+    axis([0 RSSILength 0 rssi_range])
+    xlabel('Sample Index')
+    
+    if(USE_AGC)
+        RxGainRF = rx_gains(1);
+        RxGainBB = rx_gains(2);
+    else
+        RxGainRF = ManualRxGainRF;
+        RxGainBB = ManualRxGainBB;
+    end
+    
+    title(sprintf('Received RSSI, Gains Selected -- RF: %d, BB: %d', RxGainRF, RxGainBB))
+    
+    PA_OutBlock = payload_vec;
     
     % Shift the PA output such that the IM3 frequency is at baseband
     PA_OutBlockShifted = PA_OutBlock.*exp(-2*pi*1i*(PA_In_StartIndx:PA_In_EndIndx).'*IM3_Freq*1e6/SystemFs);
@@ -218,7 +311,6 @@ else
     set(L2,'Interpreter','Latex');
     
     LMSFilterTaps = Alpha.';
-    
 end
 
 
