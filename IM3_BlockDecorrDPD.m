@@ -265,7 +265,8 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     %     linkaxes(ax,'xy')
     
     PA_OutBlock = payload_vec;
-    
+    [delay4,coeff4,PA_OutputSignal_Synchronized] = cyclosync(PA_InBlock, PA_OutBlock,'Y TO X');
+    PA_OutBlock = PA_OutputSignal_Synchronized;
     % Shift the PA output such that the IM3 frequency is at baseband
     PA_OutBlockShifted = PA_OutBlock.*exp(-2*pi*1i*(PA_In_StartIndx:PA_In_EndIndx).'*IM3_Freq*1e6/SystemFs);
     
