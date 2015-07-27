@@ -250,8 +250,6 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
         RxGainBB = ManualRxGainBB;
     end
     
-    title(sprintf('Received RSSI, Gains Selected -- RF: %d, BB: %d', RxGainRF, RxGainBB))
-    
     PA_OutBlock = payload_vec;
     
     % Shift the PA output such that the IM3 frequency is at baseband
