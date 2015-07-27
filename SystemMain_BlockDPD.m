@@ -26,7 +26,7 @@ MemoryLessDPD                       =   1;          % 1- MemoryLess DPD
 % 0- MemoryDPD
 
 USE_WARP = 0;
-DoTraining = 0;                                     %To set alpha yourself. No training
+DoTraining = 1;                                     %To set alpha yourself. No training
 IM3_BlockDecorrDPD_Coeffs           = 1.6+1.5*i;    %For Memoryless Pretraining
 
 DPD_LearningBlockSize  = 100;                       % Decorrelating DPD Learning Block size
@@ -62,7 +62,7 @@ PH_f5 = [0.0015 - 0.0029i;
 
 % The memoryless paramters of the PA model (Not used in this m-file)
 MemorylessPA_Paramters = [1.0735 - 0.0287i;
-    -0.0474 + 0.0237i;
+    1 + 0.5;
     0.0012 - 0.0030i];
 Beta_1 = MemorylessPA_Paramters(1);
 Beta_3 = MemorylessPA_Paramters(2);
@@ -220,6 +220,7 @@ if(USE_WARP)
     wl_interfaceCmd(nodes, 'RF_ALL', 'tx_rx_dis');
     PA_Output_IM3_DPD = rx_IQ(50:end);         %throw away 50 early samples
 else
+    nodes = 0;RF_TX = 0;RF_RX = 0;,node_tx = 0;,node_rx = 0;,eth_trig = 0;,Ts = 0;
     % Power Amplifier Model
     if MemoryLessPA
         PA_OutputSignal = MemoryLess_PA(PA_InputSignal,Beta_1,Beta_3,Beta_5);
@@ -243,7 +244,8 @@ LoopDelay = DPD_LoopDelayEst(PA_InputSignal, IM3GeneratedSignal, MemoryLessPA, S
 if (DoTraining == 1)
     IM3_BlockDecorrDPD_Coeffs = IM3_BlockDecorrDPD(PA_InputSignal,IM3GeneratedSignal.',MemoryLessPA,MemoryLessDPD, ...
         SystemFs,Signal_Bandwidth,IM3_Freq, ...
-        LoopDelay,AdditionalDelay_Samples,DPD_LearningBlockSize,DPD_FilteringBlockSize,nodes,RF_TX,RF_RX,node_tx,node_rx,eth_trig,Ts,Mu,NumSamples);
+        LoopDelay,AdditionalDelay_Samples,DPD_LearningBlockSize,DPD_FilteringBlockSize,nodes,RF_TX,RF_RX,node_tx,node_rx,eth_trig,Ts,Mu,NumSamples,USE_WARP,...
+        Beta_1,Beta_3,Beta_5)
 end
 %% Applying IM3 Decorrelating DPD
 AdaptiveFilterDelay  = length(IM3_BlockDecorrDPD_Coeffs) - 1;
@@ -293,9 +295,9 @@ if(USE_WARP)
 else
     % Power Amplifier Model
     if MemoryLessPA
-        PA_Output_IM3_DPD = MemoryLess_PA(PA_InputSignal,Beta_1,Beta_3,Beta_5);
+        PA_Output_IM3_DPD = MemoryLess_PA(PAin_IM3_DPD,Beta_1,Beta_3,Beta_5);
     else
-        PA_Output_IM3_DPD = MemoryPH_PA(PA_InputSignal,PH_f1,PH_f3,PH_f5);
+        PA_Output_IM3_DPD = MemoryPH_PA(PAin_IM3_DPD,PH_f1,PH_f3,PH_f5);
     end
 end
 %% Spectral plots

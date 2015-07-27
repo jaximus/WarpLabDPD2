@@ -1,6 +1,7 @@
 function LMSFilterTaps = IM3_BlockDecorrDPD(PA_InputSignal,IM3_Basis_Orthogonal,MemoryLessPA,MemoryLessDPD, ...
     SystemFs,Signal_Bandwidth,IM3_Freq,LoopDelay,AdditionalDelay,...
-    DPD_LearningBlockSize,DPD_FilteringBlockSize,nodes,RF_TX,RF_RX,node_tx,node_rx,eth_trig,Ts, Mu, NumSamples);
+    DPD_LearningBlockSize,DPD_FilteringBlockSize,nodes,RF_TX,RF_RX,node_tx,node_rx,eth_trig,Ts, Mu, NumSamples,USE_WARP,...
+    Beta_1,Beta_3,Beta_5);
 
 NumberOfBasisFunctions = length(IM3_Basis_Orthogonal(:,1));
 
@@ -138,39 +139,45 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
         txData  = payload;
     end
     
-    txLength = length(txData);
-    
-    % Set capture lengths
-    RXLength    = txLength+1000;
-    
-    wl_basebandCmd(nodes, 'tx_length', txLength);
-    wl_basebandCmd(nodes, 'rx_length', RXLength);
-    
-    % Transmit IQ data to the TX node
-    wl_basebandCmd(node_tx, [RF_TX], 'write_IQ', txData(:));
-    
-    % Enabled the RF interfaces for TX / RX
-    wl_interfaceCmd(node_tx, RF_TX, 'tx_en');
-    wl_interfaceCmd(node_rx, RF_RX, 'rx_en');
-    
-    % Enable the buffers for TX / RX
-    wl_basebandCmd(node_tx, RF_TX, 'tx_buff_en');
-    wl_basebandCmd(node_rx, RF_RX, 'rx_buff_en');
-    
-    % Send the Ethernet trigger to start the TX / RX
-    eth_trig.send();
-    
-    % Wait until the TX / RX is done
-    pause(1.2 * txLength * Ts);
-    
-    % Read the IQ and RSSI data from the RX node
-    rx_IQ    = wl_basebandCmd(node_rx, [RF_RX], 'read_IQ', 0, RXLength);
-    %rx_IQ = detrend(rx_IQ);
-    
-    % Disable the buffers and RF interfaces for TX / RX
-    wl_basebandCmd(nodes, 'RF_ALL', 'tx_rx_buff_dis');
-    wl_interfaceCmd(nodes, 'RF_ALL', 'tx_rx_dis');
-    
+     if(USE_WARP)
+        % Set capture lengths
+        txLength = length(txData);
+        RXLength    = txLength+1000;
+        wl_basebandCmd(nodes, 'tx_length', txLength);
+        wl_basebandCmd(nodes, 'rx_length', RXLength);
+        
+        % Transmit IQ data to the TX node
+        wl_basebandCmd(node_tx, [RF_TX], 'write_IQ', txData(:));
+        
+        % Enabled the RF interfaces for TX / RX
+        wl_interfaceCmd(node_tx, RF_TX, 'tx_en');
+        wl_interfaceCmd(node_rx, RF_RX, 'rx_en');
+        
+        % Enable the buffers for TX / RX
+        wl_basebandCmd(node_tx, RF_TX, 'tx_buff_en');
+        wl_basebandCmd(node_rx, RF_RX, 'rx_buff_en');
+        
+        % Send the Ethernet trigger to start the TX / RX
+        eth_trig.send();
+        
+        % Wait until the TX / RX is done
+        pause(1.2 * txLength * Ts);
+        
+        % Read the IQ and RSSI data from the RX node
+        rx_IQ    = wl_basebandCmd(node_rx, [RF_RX], 'read_IQ', 0, RXLength);
+        %rx_IQ = detrend(rx_IQ);
+        
+        % Disable the buffers and RF interfaces for TX / RX
+        wl_basebandCmd(nodes, 'RF_ALL', 'tx_rx_buff_dis');
+        wl_interfaceCmd(nodes, 'RF_ALL', 'tx_rx_dis');
+    else
+        % Power Amplifier Model
+        if MemoryLessPA
+            rx_IQ = MemoryLess_PA(txData,Beta_1,Beta_3,Beta_5);
+        else
+            rx_IQ = MemoryPH_PA(txData,PH_f1,PH_f3,PH_f5);
+        end
+    end
     
     %% Correlate for LTS
     if(USE_PREAMBLE)
