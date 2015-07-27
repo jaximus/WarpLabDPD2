@@ -9,7 +9,7 @@ clc;
 TxScenario                          =   3;     % 1- Contigious Single CC
                                                % 2- Multi-Cluster Single CC
                                                % 3- Intra-Band CA Two CC 
-N_symbols                           =  8000;    % No of OFDM Symbols for Simulation
+N_symbols                           =  4000;    % No of OFDM Symbols for Simulation
 TxSignalType                        =   2;     % 1- OFDM for DL Transmission
                                                % 2- SCFDMA for UL Transmission
 ModulationType                      =   1;     % 1- QPSK
@@ -31,10 +31,42 @@ IM3_BlockDecorrDPD_Coeffs           = 0.5+0.125*i;  %For Memoryless Pretraining
 DPD_LearningBlockSize  = 100;                         % Decorrelating DPD Learning Block size
 DPD_FilteringBlockSize = 1000;                       % Decorrelating DPD Filtering Block size
 NumSamples = 5000000;                               % Total number of samples used for learning
-Mu = 1;                                             %LMS Gain
+Mu = 4;                                             %LMS Gain
 
 ScalingForPA = 10;                              %Changes magnitude of PA input signal
-% PA_Power_Measured = 23;
+
+%% Power Amplifier Model
+PA_Power_Measured = 23; % The Tx power at which the PA paramters were measured at
+% PH PA Branch Filters of the used PH PA model
+PH_f1 = [0.9741 + 0.1014i;
+   0.2833 - 0.3192i;
+  -0.5420 + 0.1199i;
+   0.6692 + 0.3308i;
+  -0.4427 - 0.4366i;
+   0.1002 + 0.1407i];
+
+PH_f3 = [-0.0489 + 0.0192i;
+   0.0025 + 0.0063i;
+  -0.0093 - 0.0098i;
+   0.0080 + 0.0049i;
+  -0.0048 - 0.0028i;
+   0.0024 - 0.0006i];
+
+PH_f5 = [0.0015 - 0.0029i;
+   0.0000 + 0.0002i;
+   0.0000 + 0.0002i;
+   0.0000 + 0.0003i;
+   0.0000 + 0.0002i;
+   0.0000 + 0.0002i];
+
+% The memoryless paramters of the PA model (Not used in this m-file)
+MemorylessPA_Paramters = [1.0735 - 0.0287i;
+                         -0.0474 + 0.0237i;
+                          0.0012 - 0.0030i];
+Beta_1 = MemorylessPA_Paramters(1);
+Beta_3 = MemorylessPA_Paramters(2);
+Beta_5 = MemorylessPA_Paramters(3);                                              
+
 
 %% Baseband Tx signal paramters                                               
 LTE_Bandwidth = 1.4; % Carrier BW of the LTE Tx Signal
@@ -54,11 +86,11 @@ MAX_TX_LEN     = 2^25;                 % 2^14 =    16384 --> Max TX / RX length 
 % RX variables
 USE_AGC        = false;
 ManualRxGainRF = 2;                    % Rx RF Gain in [1:3] (ignored if USE_AGC is true)
-ManualRxGainBB = 10;                   % Rx Baseband Gain in [0:31] (ignored if USE_AGC is true)
+ManualRxGainBB = 9;                   % Rx Baseband Gain in [0:31] (ignored if USE_AGC is true)
 
 % TX variables
 BB_GAIN = 3;                           %Must be integer in [0,1,2,3] for approx ![-5, -3, -1.5, 0]dB baseband gain
-RF_GAIN = 55;                          %Must be integer in [0:63] for approx [0:31]dB RF gain
+RF_GAIN = 50;                          %Must be integer in [0:63] for approx [0:31]dB RF gain
 
 
 % Create a vector of node objects
@@ -134,8 +166,6 @@ end
 % the max I/Q buffer length of node_tx RFA.
 maximum_buffer_len = wl_basebandCmd(node_tx, RF_TX, 'tx_buff_max_num_samples');
 
-
-
 Ts = 1/(wl_basebandCmd(nodes(1),'tx_buff_clk_freq'));
 Ts_RSSI = 1/(wl_basebandCmd(nodes(1),'rx_rssi_clk_freq'));
 
@@ -160,7 +190,7 @@ RXLength    = txLength;
 
 wl_basebandCmd(nodes, 'tx_delay', 0);
 wl_basebandCmd(nodes, 'tx_length', txLength);
-wl_basebandCmd(nodes, 'rx_length', txLength);
+wl_basebandCmd(nodes, 'rx_length', RXLength);
 
 % Transmit IQ data to the TX node
 wl_basebandCmd(node_tx, [RF_TX], 'write_IQ', txData(:));
@@ -181,7 +211,6 @@ pause(1.2 * txLength * Ts);
 
 % Read the IQ and RSSI data from the RX node 
 rx_IQ    = wl_basebandCmd(node_rx, [RF_RX], 'read_IQ', 0, RXLength);
-rx_gains = wl_basebandCmd(node_rx, [RF_RX], 'agc_state');
 
 % Disable the buffers and RF interfaces for TX / RX
 wl_basebandCmd(nodes, 'RF_ALL', 'tx_rx_buff_dis');
@@ -198,9 +227,9 @@ AdditionalDelay_Musecs = 0; % In MicroSeconds
 AdditionalDelay_Samples = round(AdditionalDelay_Musecs*1e-6*SystemFs);
 
 %% Loop Delay Estimation
-%  LoopDelay = DPD_LoopDelayEst(PA_InputSignal, IM3GeneratedSignal, MemoryLessPA, SystemFs,Signal_Bandwidth, ...
-%        IM3_Freq,Beta_1,Beta_3,Beta_5,PH_f1,PH_f3,PH_f5,AdditionalDelay_Samples);
-LoopDelay = 51;                         
+LoopDelay = DPD_LoopDelayEst(PA_InputSignal, IM3GeneratedSignal, MemoryLessPA, SystemFs,Signal_Bandwidth, ...
+        IM3_Freq,Beta_1,Beta_3,Beta_5,PH_f1,PH_f3,PH_f5,AdditionalDelay_Samples);
+                        
 %% IM3 Block Decorrelating DPD Estimation
 if (DoTraining == 1)
  IM3_BlockDecorrDPD_Coeffs = IM3_BlockDecorrDPD(PA_InputSignal,IM3GeneratedSignal.',MemoryLessPA,MemoryLessDPD, ...
@@ -245,7 +274,6 @@ pause(1.2 * txLength * Ts);
 
 % Read the IQ and RSSI data from the RX node 
 rx_IQ    = wl_basebandCmd(node_rx, [RF_RX], 'read_IQ', 0, RXLength);
-rx_gains = wl_basebandCmd(node_rx, [RF_RX], 'agc_state');
 
 % Disable the buffers and RF interfaces for TX / RX
 wl_basebandCmd(nodes, 'RF_ALL', 'tx_rx_buff_dis');

@@ -25,7 +25,7 @@ MemoryLessPA                        =   1;          % 1- MemoryLess PA model
 MemoryLessDPD                       =   1;          % 1- MemoryLess DPD
                                                     % 0- MemoryDPD
 
-DoTraining = 0;                                     %To set alpha yourself. No training                                               
+DoTraining = 1;                                     %To set alpha yourself. No training                                               
 IM3_BlockDecorrDPD_Coeffs           = 0.5+0.125*i;  %For Memoryless Pretraining
 
 DPD_LearningBlockSize  = 100;                         % Decorrelating DPD Learning Block size
@@ -33,7 +33,40 @@ DPD_FilteringBlockSize = 1000;                       % Decorrelating DPD Filteri
 NumSamples = 5000000;                               % Total number of samples used for learning
 Mu = 1;                                             %LMS Gain
 
-% PA_Power_Measured = 23;
+ScalingForPA = 10;                              %Changes magnitude of PA input signal
+
+%% Power Amplifier Model
+PA_Power_Measured = 23; % The Tx power at which the PA paramters were measured at
+% PH PA Branch Filters of the used PH PA model
+PH_f1 = [0.9741 + 0.1014i;
+   0.2833 - 0.3192i;
+  -0.5420 + 0.1199i;
+   0.6692 + 0.3308i;
+  -0.4427 - 0.4366i;
+   0.1002 + 0.1407i];
+
+PH_f3 = [-0.0489 + 0.0192i;
+   0.0025 + 0.0063i;
+  -0.0093 - 0.0098i;
+   0.0080 + 0.0049i;
+  -0.0048 - 0.0028i;
+   0.0024 - 0.0006i];
+
+PH_f5 = [0.0015 - 0.0029i;
+   0.0000 + 0.0002i;
+   0.0000 + 0.0002i;
+   0.0000 + 0.0003i;
+   0.0000 + 0.0002i;
+   0.0000 + 0.0002i];
+
+% The memoryless paramters of the PA model (Not used in this m-file)
+MemorylessPA_Paramters = [1.0735 - 0.0287i;
+                         -0.0474 + 0.0237i;
+                          0.0012 - 0.0030i];
+Beta_1 = MemorylessPA_Paramters(1);
+Beta_3 = MemorylessPA_Paramters(2);
+Beta_5 = MemorylessPA_Paramters(3);                                              
+
 
 %% Baseband Tx signal paramters                                               
 LTE_Bandwidth = 1.4; % Carrier BW of the LTE Tx Signal
@@ -53,11 +86,11 @@ MAX_TX_LEN     = 2^25;                 % 2^14 =    16384 --> Max TX / RX length 
 % RX variables
 USE_AGC        = false;
 ManualRxGainRF = 2;                    % Rx RF Gain in [1:3] (ignored if USE_AGC is true)
-ManualRxGainBB = 10;                   % Rx Baseband Gain in [0:31] (ignored if USE_AGC is true)
+ManualRxGainBB = 9;                   % Rx Baseband Gain in [0:31] (ignored if USE_AGC is true)
 
 % TX variables
 BB_GAIN = 3;                           %Must be integer in [0,1,2,3] for approx ![-5, -3, -1.5, 0]dB baseband gain
-RF_GAIN = 55;                          %Must be integer in [0:63] for approx [0:31]dB RF gain
+RF_GAIN = 50;                          %Must be integer in [0:63] for approx [0:31]dB RF gain
 
 
 % Create a vector of node objects
@@ -133,8 +166,6 @@ end
 % the max I/Q buffer length of node_tx RFA.
 maximum_buffer_len = wl_basebandCmd(node_tx, RF_TX, 'tx_buff_max_num_samples');
 
-
-
 Ts = 1/(wl_basebandCmd(nodes(1),'tx_buff_clk_freq'));
 Ts_RSSI = 1/(wl_basebandCmd(nodes(1),'rx_rssi_clk_freq'));
 
@@ -145,7 +176,7 @@ Ts_RSSI = 1/(wl_basebandCmd(nodes(1),'rx_rssi_clk_freq'));
 % TX_PowerScale = sqrt(10^((PA_Power_Measured-Pout_dBm)/10));
 % RMS_PAin = sqrt(mean(abs(LTE_Signal).^2));
 % ScalingForPA = 1/(RMS_PAin*TX_PowerScale);
-ScalingForPA = 10;
+
 PA_InputSignal = LTE_Signal*ScalingForPA; 
 CC1 = CC1*ScalingForPA; 
 CC2 = CC2*ScalingForPA;
@@ -155,11 +186,11 @@ txData  = [PA_InputSignal];
 txLength = length(txData);
 
 % Set capture lengths
-RXLength    = txLength;
+RXLength    = txLength+1000;
 
 wl_basebandCmd(nodes, 'tx_delay', 0);
 wl_basebandCmd(nodes, 'tx_length', txLength);
-wl_basebandCmd(nodes, 'rx_length', txLength);
+wl_basebandCmd(nodes, 'rx_length', MAX_TX_LEN);
 
 % Transmit IQ data to the TX node
 wl_basebandCmd(node_tx, [RF_TX], 'write_IQ', txData(:));
@@ -197,9 +228,9 @@ AdditionalDelay_Musecs = 0; % In MicroSeconds
 AdditionalDelay_Samples = round(AdditionalDelay_Musecs*1e-6*SystemFs);
 
 %% Loop Delay Estimation
-%  LoopDelay = DPD_LoopDelayEst(PA_InputSignal, IM3GeneratedSignal, MemoryLessPA, SystemFs,Signal_Bandwidth, ...
-%        IM3_Freq,Beta_1,Beta_3,Beta_5,PH_f1,PH_f3,PH_f5,AdditionalDelay_Samples);
-LoopDelay = 51;                         
+LoopDelay = DPD_LoopDelayEst(PA_InputSignal, IM3GeneratedSignal, MemoryLessPA, SystemFs,Signal_Bandwidth, ...
+        IM3_Freq,Beta_1,Beta_3,Beta_5,PH_f1,PH_f3,PH_f5,AdditionalDelay_Samples);
+                        
 %% IM3 Block Decorrelating DPD Estimation
 if (DoTraining == 1)
  IM3_BlockDecorrDPD_Coeffs = IM3_BlockDecorrDPD(PA_InputSignal,IM3GeneratedSignal.',MemoryLessPA,MemoryLessDPD, ...

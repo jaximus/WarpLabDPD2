@@ -5,15 +5,15 @@ function LMSFilterTaps = IM3_BlockDecorrDPD(PA_InputSignal,IM3_Basis_Orthogonal,
 NumberOfBasisFunctions = length(IM3_Basis_Orthogonal(:,1));
 
 % Plotting variables
-iq_range    = 1;                       % Plots IQ values in the range:  [-1, 1]
-rssi_range  = 1024;                    % Plots RSSI values in the range:  [0, 1024] 
+%iq_range    = 1;                       % Plots IQ values in the range:  [-1, 1]
+%rssi_range  = 1024;                    % Plots RSSI values in the range:  [0, 1024] 
 LTS_CORR_THRESH         = 0.8;         % Normalized threshold for LTS correlation
 DO_APPLY_CFO_CORRECTION = 1;           % Enable CFO estimation/correction
 FFT_OFFSET              = 4;
 
 %% Make the Third order IMD extraction filter, all frequency values are in MHz.
 Fs    = round(SystemFs/1e6);    % Sampling Frequency
-N     = 100;                    % Order
+N     = 200;                    % Order
 Fpass = (3*Signal_Bandwidth)/2; % Passband Frequency
 Fstop = (5*Signal_Bandwidth)/2; % Stopband Frequency
 
@@ -133,11 +133,10 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     txLength = length(txData);
     
     % Set capture lengths
-    RXLength    = txLength+4000;
+    RXLength    = txLength+1000;
     
-    wl_basebandCmd(nodes, 'tx_delay', 0);
     wl_basebandCmd(nodes, 'tx_length', txLength);
-    wl_basebandCmd(nodes, 'rx_length', txLength);
+    wl_basebandCmd(nodes, 'rx_length', txLength+1000);
     
     % Transmit IQ data to the TX node
     wl_basebandCmd(node_tx, [RF_TX], 'write_IQ', txData(:));
@@ -224,33 +223,23 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     payload_vec = rx_dec_cfo_corr(payload_ind : payload_ind+length(payload)-1);
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Visualize results
+    % Visualize results FOR DEBUGGING PURPOSES 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    figure(1);clf;
-    ax(1) = subplot(2,1,1);
-    plot(0:(length(rx_IQ)-1),real(rx_IQ))
-    xlabel('Sample Index')
-    title('Received I')
-    axis([1 RXLength -iq_range iq_range])
-    
-    ax(2) = subplot(2,1,2);
-    plot(0:(length(rx_IQ)-1),imag(rx_IQ))
-    xlabel('Sample Index')
-    title('Received Q')
-    axis([1 RXLength -iq_range iq_range])
-    
-    linkaxes(ax,'xy')
-    
-    if(USE_AGC)
-        RxGainRF = rx_gains(1);
-        RxGainBB = rx_gains(2);
-    else
-        RxGainRF = ManualRxGainRF;
-        RxGainBB = ManualRxGainBB;
-    end
-    
-    title(sprintf('Received RSSI, Gains Selected -- RF: %d, BB: %d', RxGainRF, RxGainBB))
+%     figure(1);clf;
+%     ax(1) = subplot(2,1,1);
+%     plot(0:(length(rx_IQ)-1),real(rx_IQ))
+%     xlabel('Sample Index')
+%     title('Received I')
+%     axis([1 RXLength -iq_range iq_range])
+%     
+%     ax(2) = subplot(2,1,2);
+%     plot(0:(length(rx_IQ)-1),imag(rx_IQ))
+%     xlabel('Sample Index')
+%     title('Received Q')
+%     axis([1 RXLength -iq_range iq_range])
+%     
+%     linkaxes(ax,'xy')
     
     PA_OutBlock = payload_vec;
     

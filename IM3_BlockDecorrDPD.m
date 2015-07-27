@@ -5,15 +5,15 @@ function LMSFilterTaps = IM3_BlockDecorrDPD(PA_InputSignal,IM3_Basis_Orthogonal,
 NumberOfBasisFunctions = length(IM3_Basis_Orthogonal(:,1));
 
 % Plotting variables
-iq_range    = 1;                       % Plots IQ values in the range:  [-1, 1]
-rssi_range  = 1024;                    % Plots RSSI values in the range:  [0, 1024] 
+%iq_range    = 1;                       % Plots IQ values in the range:  [-1, 1]
+%rssi_range  = 1024;                    % Plots RSSI values in the range:  [0, 1024] 
 LTS_CORR_THRESH         = 0.8;         % Normalized threshold for LTS correlation
 DO_APPLY_CFO_CORRECTION = 1;           % Enable CFO estimation/correction
 FFT_OFFSET              = 4;
 
 %% Make the Third order IMD extraction filter, all frequency values are in MHz.
 Fs    = round(SystemFs/1e6);    % Sampling Frequency
-N     = 100;                    % Order
+N     = 200;                    % Order
 Fpass = (3*Signal_Bandwidth)/2; % Passband Frequency
 Fstop = (5*Signal_Bandwidth)/2; % Stopband Frequency
 
@@ -133,11 +133,10 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     txLength = length(txData);
     
     % Set capture lengths
-    RXLength    = txLength+4000;
+    RXLength    = txLength+1000;
     
-    wl_basebandCmd(nodes, 'tx_delay', 0);
     wl_basebandCmd(nodes, 'tx_length', txLength);
-    wl_basebandCmd(nodes, 'rx_length', txLength);
+    wl_basebandCmd(nodes, 'rx_length', RXLength);
     
     % Transmit IQ data to the TX node
     wl_basebandCmd(node_tx, [RF_TX], 'write_IQ', txData(:));
