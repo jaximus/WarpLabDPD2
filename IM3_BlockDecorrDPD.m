@@ -224,23 +224,23 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     payload_vec = rx_dec_cfo_corr(payload_ind : payload_ind+length(payload)-1);
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Visualize results
+    % Visualize results FOR DEBUGGING PURPOSES 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-    figure(1);clf;
-    ax(1) = subplot(2,1,1);
-    plot(0:(length(rx_IQ)-1),real(rx_IQ))
-    xlabel('Sample Index')
-    title('Received I')
-    axis([1 RXLength -iq_range iq_range])
-    
-    ax(2) = subplot(2,1,2);
-    plot(0:(length(rx_IQ)-1),imag(rx_IQ))
-    xlabel('Sample Index')
-    title('Received Q')
-    axis([1 RXLength -iq_range iq_range])
-    
-    linkaxes(ax,'xy')
+%     figure(1);clf;
+%     ax(1) = subplot(2,1,1);
+%     plot(0:(length(rx_IQ)-1),real(rx_IQ))
+%     xlabel('Sample Index')
+%     title('Received I')
+%     axis([1 RXLength -iq_range iq_range])
+%     
+%     ax(2) = subplot(2,1,2);
+%     plot(0:(length(rx_IQ)-1),imag(rx_IQ))
+%     xlabel('Sample Index')
+%     title('Received Q')
+%     axis([1 RXLength -iq_range iq_range])
+%     
+%     linkaxes(ax,'xy')
     
     PA_OutBlock = payload_vec;
     
