@@ -25,8 +25,8 @@ MemoryLessPA                        =   1;          % 1- MemoryLess PA model
 MemoryLessDPD                       =   1;          % 1- MemoryLess DPD
 % 0- MemoryDPD
 
-USE_WARP = 1;                                       %For a simulation only. 
-DoTraining = 0;                                     %To set alpha yourself. No training
+USE_WARP = 0;                                       %For a simulation only. 
+DoTraining = 1;                                     %To set alpha yourself. No training
 IM3_BlockDecorrDPD_Coeffs           = 0.5+0.1*i;    %For Memoryless Pretraining
 
 DPD_LearningBlockSize  = 500;                       % Decorrelating DPD Learning Block size

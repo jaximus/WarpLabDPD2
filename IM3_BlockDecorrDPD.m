@@ -8,8 +8,8 @@ NumberOfBasisFunctions = length(IM3_Basis_Orthogonal(:,1));
 % Plotting variables
 %iq_range    = 1;                       % Plots IQ values in the range:  [-1, 1]
 %rssi_range  = 1024;                    % Plots RSSI values in the range:  [0, 1024]
-USE_PREAMBLE            = 1;
-
+USE_PREAMBLE            = 0;
+FINE_DELAY              =0 ;
 if(USE_WARP)
     warp_PA_delay       = 44;          %Delay only used if USE_PREAMBLE = 0 to throw away first 43 samples of rxIQ
 else
@@ -265,8 +265,11 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     %     linkaxes(ax,'xy')
     
     PA_OutBlock = payload_vec;
-    [delay4,coeff4,PA_OutputSignal_Synchronized] = cyclosync(PA_InBlock, PA_OutBlock,'Y TO X');
-    PA_OutBlock = PA_OutputSignal_Synchronized;
+    
+    if(FINE_DELAY)
+        [delay4,coeff4,PA_OutputSignal_Synchronized] = cyclosync(PA_InBlock, PA_OutBlock,'Y TO X');
+        PA_OutBlock = PA_OutputSignal_Synchronized;
+    end
     % Shift the PA output such that the IM3 frequency is at baseband
     PA_OutBlockShifted = PA_OutBlock.*exp(-2*pi*1i*(PA_In_StartIndx:PA_In_EndIndx).'*IM3_Freq*1e6/SystemFs);
     
