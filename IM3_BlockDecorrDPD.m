@@ -4,6 +4,13 @@ function LMSFilterTaps = IM3_BlockDecorrDPD(PA_InputSignal,IM3_Basis_Orthogonal,
 
 NumberOfBasisFunctions = length(IM3_Basis_Orthogonal(:,1));
 
+% Plotting variables
+iq_range    = 1;                       % Plots IQ values in the range:  [-1, 1]
+rssi_range  = 1024;                    % Plots RSSI values in the range:  [0, 1024] 
+LTS_CORR_THRESH         = 0.8;         % Normalized threshold for LTS correlation
+DO_APPLY_CFO_CORRECTION = 1;           % Enable CFO estimation/correction
+FFT_OFFSET              = 4;
+
 %% Make the Third order IMD extraction filter, all frequency values are in MHz.
 Fs    = round(SystemFs/1e6);    % Sampling Frequency
 N     = 100;                    % Order
