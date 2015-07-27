@@ -205,7 +205,7 @@ LoopDelay = 51;
 if (DoTraining == 1)
  IM3_BlockDecorrDPD_Coeffs = IM3_BlockDecorrDPD(PA_InputSignal,IM3GeneratedSignal.',MemoryLessPA,MemoryLessDPD, ...
        SystemFs,Signal_Bandwidth,IM3_Freq, ...
-       LoopDelay,AdditionalDelay_Samples,DPD_LearningBlockSize,DPD_FilteringBlockSize,nodes,RF_TX,RF_RX,node_tx,node_rx,eth_trig,Ts);
+       LoopDelay,AdditionalDelay_Samples,DPD_LearningBlockSize,DPD_FilteringBlockSize,nodes,RF_TX,RF_RX,node_tx,node_rx,eth_trig,Ts,Mu,NumSamples);
 end
 %% Applying IM3 Decorrelating DPD 
  AdaptiveFilterDelay  = length(IM3_BlockDecorrDPD_Coeffs) - 1;
