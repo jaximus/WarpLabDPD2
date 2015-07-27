@@ -9,12 +9,9 @@ Fs    = round(SystemFs/1e6);  % Sampling Frequency
 N     = 100;  % Order
 Fpass = (3*Signal_Bandwidth)/2; % Passband Frequency
 Fstop = (5*Signal_Bandwidth)/2; % Stopband Frequency
-Wpass = 1;    % Passband Weight
-Wstop = 5;    % Stopband Weight
-dens  = 20;   % Density Factor
+
 % Calculate the coefficients using the FIRPM function.
-IM3Filter  = firpm(N, [0 Fpass Fstop Fs/2]/(Fs/2), [1 1 0 0], [Wpass Wstop], ...
-    {dens});
+IM3Filter  = firls(N, [0 Fpass Fstop Fs/2]/(Fs/2), [1 1 0 0]);
 
 % Adaptive Decorrelating DPD using MBF
 if MemoryLessDPD
