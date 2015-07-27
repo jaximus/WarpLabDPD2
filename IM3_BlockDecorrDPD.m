@@ -4,13 +4,13 @@ function LMSFilterTaps = IM3_BlockDecorrDPD(PA_InputSignal,IM3_Basis_Orthogonal,
 
 NumberOfBasisFunctions = length(IM3_Basis_Orthogonal(:,1));
 
-% Third order IMD extraction filter, all frequency values are in MHz.
-Fs    = round(SystemFs/1e6);  % Sampling Frequency
-N     = 100;  % Order
+%% Make the Third order IMD extraction filter, all frequency values are in MHz.
+Fs    = round(SystemFs/1e6);    % Sampling Frequency
+N     = 100;                    % Order
 Fpass = (3*Signal_Bandwidth)/2; % Passband Frequency
 Fstop = (5*Signal_Bandwidth)/2; % Stopband Frequency
 
-% Calculate the coefficients using the FIRPM function.
+% Calculate the coefficients using the FIRLS function.
 IM3Filter  = firls(N, [0 Fpass Fstop Fs/2]/(Fs/2), [1 1 0 0]);
 
 %% Define the preamble
