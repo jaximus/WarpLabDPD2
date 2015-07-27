@@ -13,7 +13,21 @@ Fstop = (5*Signal_Bandwidth)/2; % Stopband Frequency
 % Calculate the coefficients using the FIRPM function.
 IM3Filter  = firls(N, [0 Fpass Fstop Fs/2]/(Fs/2), [1 1 0 0]);
 
-% Adaptive Decorrelating DPD using MBF
+%% Define the preamble
+sts_f = zeros(1,64);
+sts_f(1:27) = [0 0 0 0 -1-1i 0 0 0 -1-1i 0 0 0 1+1i 0 0 0 1+1i 0 0 0 1+1i 0 0 0 1+1i 0 0];
+sts_f(39:64) = [0 0 1+1i 0 0 0 -1-1i 0 0 0 1+1i 0 0 0 -1-1i 0 0 0 -1-1i 0 0 0 1+1i 0 0 0];
+sts_t = ifft(sqrt(13/6).*sts_f, 64);
+sts_t = sts_t(1:16);
+
+% LTS for CFO and channel estimation
+lts_f = [0 1 -1 -1 1 1 -1 1 -1 1 -1 -1 -1 -1 -1 1 1 -1 -1 1 -1 1 -1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 1 1 -1 -1 1 1 -1 1 -1 1 1 1 1 1 1 -1 -1 1 1 -1 1 -1 1 1 1 1];
+lts_t = ifft(lts_f, 64);
+
+% Use 30 copies of the 16-sample STS for extra AGC settling margin
+preamble = [repmat(sts_t, 1, 30)  lts_t(33:64) lts_t lts_t];
+
+%% Adaptive Decorrelating DPD using MBF
 if MemoryLessDPD
     NumBlocks = floor(NumSamples/DPD_FilteringBlockSize);
     AdaptiveFilterDelay = 1;
