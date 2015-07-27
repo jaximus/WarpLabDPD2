@@ -30,8 +30,8 @@ IM3_BlockDecorrDPD_Coeffs           = 1.6+1.5*i;    %For Memoryless Pretraining
 
 DPD_LearningBlockSize  = 100;                       % Decorrelating DPD Learning Block size
 DPD_FilteringBlockSize = 1000;                      % Decorrelating DPD Filtering Block size
-NumSamples = 5000000;                               % Total number of samples used for learning
-Mu = 2;                                             %LMS Gain
+NumSamples = 1000000;                               % Total number of samples used for learning
+Mu = 1;                                             %LMS Gain
 
 ScalingForPA = 4.2;                                 %Changes magnitude of PA input signal
 

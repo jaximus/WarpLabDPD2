@@ -7,7 +7,7 @@ NumberOfBasisFunctions = length(IM3_Basis_Orthogonal(:,1));
 % Plotting variables
 %iq_range    = 1;                       % Plots IQ values in the range:  [-1, 1]
 %rssi_range  = 1024;                    % Plots RSSI values in the range:  [0, 1024]
-USE_PREAMBLE            = 1;
+USE_PREAMBLE            = 0;
 warp_PA_delay           = 44;          %Delat only used if USE_PREAMBLE = 0
 LTS_CORR_THRESH         = 0.8;         % Normalized threshold for LTS correlation
 DO_APPLY_CFO_CORRECTION = 1;           % Enable CFO estimation/correction
@@ -228,7 +228,7 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
         % Extract the payload samples
         payload_vec = rx_dec_cfo_corr(payload_ind : payload_ind+length(payload)-1);
     else
-        payload_vec = rx_IQ(warp_PA_delay:warp_PA_delay+DPD_FilteringBlockSize-1)
+        payload_vec = rx_IQ(warp_PA_delay:warp_PA_delay+DPD_FilteringBlockSize-1);
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
