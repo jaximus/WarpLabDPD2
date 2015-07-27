@@ -285,7 +285,7 @@ if MemoryLessDPD
     FinalCoeff = DPD_Coeff(1:NumBlocks,:);
     Samples = 1:length(FinalCoeff(:,1));
     TimeAxis = (Samples*DPD_FilteringBlockSize/SystemFs)*1e3;
-    figure(1);plot(TimeAxis,real(FinalCoeff(:,1)),'k');hold on;
+    figure();plot(TimeAxis,real(FinalCoeff(:,1)),'k');hold on;
     plot(TimeAxis,imag(FinalCoeff(:,1)),'r')
     xlabel('Time in msecs'); ylabel('DPD Filter Tap')
     grid on;
@@ -299,7 +299,7 @@ else
     Blocks = 1:length(FinalCoeff(:,1));
     TimeAxis = (Blocks*DPD_FilteringBlockSize/SystemFs)*1e3;
     
-    figure(1);plot(TimeAxis,real(FinalCoeff(:,1)),'k');hold on;
+    figure();plot(TimeAxis,real(FinalCoeff(:,1)),'k');hold on;
     plot(TimeAxis,real(FinalCoeff(:,2)),'r');hold on;
     plot(TimeAxis,real(FinalCoeff(:,3)),'b');hold on;
     plot(TimeAxis,real(FinalCoeff(:,4)),'g');hold on;
