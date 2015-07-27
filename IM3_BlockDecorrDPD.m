@@ -294,6 +294,7 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     ErrorBlock = IM3FilteredBlockDelayed(1:DPD_LearningBlockSize);
 end
 
+
 % Plot DPD filter taps convergence
 if MemoryLessDPD
     FinalCoeff = DPD_Coeff(1:NumBlocks,:);

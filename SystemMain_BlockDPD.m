@@ -20,12 +20,12 @@ POWER_PLOT_1MHZ                     =   0;          % Use 1 MHz power plot
 % RF and PA paramters
 Pout_dBm                            =   21;         % Desired Tx Output Power after the PA in dBm
 
-MemoryLessPA                        =   0;          % 1- MemoryLess PA model
+MemoryLessPA                        =   1;          % 1- MemoryLess PA model
 % 0- PH PA model with memory
-MemoryLessDPD                       =   1;          % 1- MemoryLess DPD
+MemoryLessDPD                       =   0;          % 1- MemoryLess DPD
 % 0- MemoryDPD
 
-USE_WARP = 0;
+USE_WARP = 1;                                       %For a simulation only. 
 DoTraining = 1;                                     %To set alpha yourself. No training
 IM3_BlockDecorrDPD_Coeffs           = 1.6+1.5*i;    %For Memoryless Pretraining
 
@@ -218,7 +218,7 @@ if(USE_WARP)
     % Disable the buffers and RF interfaces for TX / RX
     wl_basebandCmd(nodes, 'RF_ALL', 'tx_rx_buff_dis');
     wl_interfaceCmd(nodes, 'RF_ALL', 'tx_rx_dis');
-    PA_Output_IM3_DPD = rx_IQ(50:end);         %throw away 50 early samples
+    PA_OutputSignal = rx_IQ(50:end);         %throw away 50 early samples
 else
     nodes = 0;RF_TX = 0;RF_RX = 0;,node_tx = 0;,node_rx = 0;,eth_trig = 0;,Ts = 0;
     % Power Amplifier Model
