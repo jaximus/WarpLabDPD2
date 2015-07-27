@@ -22,16 +22,16 @@ Pout_dBm                            =   21;         % Desired Tx Output Power af
 
 MemoryLessPA                        =   1;          % 1- MemoryLess PA model
 % 0- PH PA model with memory
-MemoryLessDPD                       =   0;          % 1- MemoryLess DPD
+MemoryLessDPD                       =   1;          % 1- MemoryLess DPD
 % 0- MemoryDPD
 
 USE_WARP = 1;                                       %For a simulation only. 
-DoTraining = 1;                                     %To set alpha yourself. No training
-IM3_BlockDecorrDPD_Coeffs           = 1.6+1.5*i;    %For Memoryless Pretraining
+DoTraining = 0;                                     %To set alpha yourself. No training
+IM3_BlockDecorrDPD_Coeffs           = 0.5+0.1*i;    %For Memoryless Pretraining
 
-DPD_LearningBlockSize  = 100;                       % Decorrelating DPD Learning Block size
+DPD_LearningBlockSize  = 500;                       % Decorrelating DPD Learning Block size
 DPD_FilteringBlockSize = 1000;                      % Decorrelating DPD Filtering Block size
-NumSamples = 5000000;                               % Total number of samples used for learning
+NumSamples = 2000000;                               % Total number of samples used for learning
 Mu = 4;                                             %LMS Gain
 
 ScalingForPA = 4.2;                                 %Changes magnitude of PA input signal
@@ -88,12 +88,11 @@ if(USE_WARP)
     % RX variables
     USE_AGC        = false;
     ManualRxGainRF = 2;                    % Rx RF Gain in [1:3] (ignored if USE_AGC is true)
-    ManualRxGainBB = 8;                   % Rx Baseband Gain in [0:31] (ignored if USE_AGC is true)
+    ManualRxGainBB = 9;                   % Rx Baseband Gain in [0:31] (ignored if USE_AGC is true)
     
     % TX variables
     BB_GAIN = 3;                           %Must be integer in [0,1,2,3] for approx ![-5, -3, -1.5, 0]dB baseband gain
-    RF_GAIN = 50;                          %Must be integer in [0:63] for approx [0:31]dB RF gain
-    
+    RF_GAIN = 41;                          %Must be integer in [0:63] for approx [0:31]dB RF gain
     
     % Create a vector of node objects
     nodes = wl_initNodes(NUMNODES);
