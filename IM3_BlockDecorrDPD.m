@@ -1,6 +1,6 @@
 function LMSFilterTaps = IM3_BlockDecorrDPD(PA_InputSignal,IM3_Basis_Orthogonal,MemoryLessPA,MemoryLessDPD, ...
     SystemFs,Signal_Bandwidth,IM3_Freq,LoopDelay,AdditionalDelay,...
-    DPD_LearningBlockSize,DPD_FilteringBlockSize,nodes,RF_TX,RF_RX,node_tx,node_rx,eth_trig,Ts);
+    DPD_LearningBlockSize,DPD_FilteringBlockSize,nodes,RF_TX,RF_RX,node_tx,node_rx,eth_trig,Ts, Mu, NumSamples);
 
 NumberOfBasisFunctions = length(IM3_Basis_Orthogonal(:,1));
 
@@ -15,16 +15,12 @@ IM3Filter  = firls(N, [0 Fpass Fstop Fs/2]/(Fs/2), [1 1 0 0]);
 
 % Adaptive Decorrelating DPD using MBF
 if MemoryLessDPD
-    NumSamples = 1000000; % Total number of samples used for learning
     NumBlocks = floor(NumSamples/DPD_FilteringBlockSize);
-    Mu = 1;
     AdaptiveFilterDelay = 1;
     LMSInput = IM3_Basis_Orthogonal;
     W = zeros(NumberOfBasisFunctions,AdaptiveFilterDelay);
     DPD_Coeff = zeros(NumBlocks,NumberOfBasisFunctions);
 else
-    NumSamples = 20000000;
-    Mu = 0.5;
     NumBlocks = floor(NumSamples/DPD_FilteringBlockSize);
     AdaptiveFilterDelay = 5;
     LMSInput = [IM3_Basis_Orthogonal, zeros(1,AdaptiveFilterDelay-1)];

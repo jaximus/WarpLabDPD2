@@ -29,8 +29,10 @@ DoTraining = 1;                                     %To set alpha yourself. No t
 IM3_BlockDecorrDPD_Coeffs           = 0.1+0.05*i;   %For Pretraining
 
 
-DPD_LearningBlockSize  = 1;    % Decorrelating DPD Learning Block size
-DPD_FilteringBlockSize = 256;  % Decorrelating DPD Filtering Block size
+DPD_LearningBlockSize  = 1;                         % Decorrelating DPD Learning Block size
+DPD_FilteringBlockSize = 256;                       % Decorrelating DPD Filtering Block size
+NumSamples = 1000000;                               % Total number of samples used for learning
+Mu = 1;                                             %LMS Gain
 
 % PA_Power_Measured = 23;
 
