@@ -20,7 +20,7 @@ POWER_PLOT_1MHZ                     =   0;          % Use 1 MHz power plot
 % RF and PA paramters
 Pout_dBm                            =   21;         % Desired Tx Output Power after the PA in dBm
 
-MemoryLessPA                        =   1;          % 1- MemoryLess PA model
+MemoryLessPA                        =   0;          % 1- MemoryLess PA model
 % 0- PH PA model with memory
 MemoryLessDPD                       =   1;          % 1- MemoryLess DPD
 % 0- MemoryDPD
@@ -62,7 +62,7 @@ PH_f5 = [0.0015 - 0.0029i;
 
 % The memoryless paramters of the PA model (Not used in this m-file)
 MemorylessPA_Paramters = [1.0735 - 0.0287i;
-    1 + 0.5;
+    0.5 + 0.5;
     0.0012 - 0.0030i];
 Beta_1 = MemorylessPA_Paramters(1);
 Beta_3 = MemorylessPA_Paramters(2);
@@ -245,7 +245,7 @@ if (DoTraining == 1)
     IM3_BlockDecorrDPD_Coeffs = IM3_BlockDecorrDPD(PA_InputSignal,IM3GeneratedSignal.',MemoryLessPA,MemoryLessDPD, ...
         SystemFs,Signal_Bandwidth,IM3_Freq, ...
         LoopDelay,AdditionalDelay_Samples,DPD_LearningBlockSize,DPD_FilteringBlockSize,nodes,RF_TX,RF_RX,node_tx,node_rx,eth_trig,Ts,Mu,NumSamples,USE_WARP,...
-        Beta_1,Beta_3,Beta_5)
+        Beta_1,Beta_3,Beta_5,PH_f1,PH_f3,PH_f5)
 end
 %% Applying IM3 Decorrelating DPD
 AdaptiveFilterDelay  = length(IM3_BlockDecorrDPD_Coeffs) - 1;

@@ -1,7 +1,7 @@
 function LMSFilterTaps = IM3_BlockDecorrDPD(PA_InputSignal,IM3_Basis_Orthogonal,MemoryLessPA,MemoryLessDPD, ...
     SystemFs,Signal_Bandwidth,IM3_Freq,LoopDelay,AdditionalDelay,...
     DPD_LearningBlockSize,DPD_FilteringBlockSize,nodes,RF_TX,RF_RX,node_tx,node_rx,eth_trig,Ts, Mu, NumSamples,USE_WARP,...
-    Beta_1,Beta_3,Beta_5);
+    Beta_1,Beta_3,Beta_5,PH_f1,PH_f3,PH_f5);
 
 NumberOfBasisFunctions = length(IM3_Basis_Orthogonal(:,1));
 
@@ -9,11 +9,17 @@ NumberOfBasisFunctions = length(IM3_Basis_Orthogonal(:,1));
 %iq_range    = 1;                       % Plots IQ values in the range:  [-1, 1]
 %rssi_range  = 1024;                    % Plots RSSI values in the range:  [0, 1024]
 USE_PREAMBLE            = 1;
-warp_PA_delay           = 44;          %Delat only used if USE_PREAMBLE = 0
-LTS_CORR_THRESH         = 0.8;         % Normalized threshold for LTS correlation
-DO_APPLY_CFO_CORRECTION = 0;           % Enable CFO estimation/correction
-FFT_OFFSET              = 4;
 
+if(USE_WARP)
+    warp_PA_delay       = 44;          %Delay only used if USE_PREAMBLE = 0 to throw away first 43 samples of rxIQ
+else
+    warp_PA_delay       = 1;           %Don't need to account for this if not using WARP PA
+end
+
+LTS_CORR_THRESH         = 0.8;         % Normalized threshold for LTS correlation
+DO_APPLY_CFO_CORRECTION = 1;           % Enable CFO estimation/correction
+FFT_OFFSET              = 4;
+payload_ind_array = 0;
 %% Make the Third order IMD extraction filter, all frequency values are in MHz.
 Fs    = round(SystemFs/1e6);    % Sampling Frequency
 N     = 200;                    % Order
@@ -139,7 +145,7 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
         txData  = payload;
     end
     
-     if(USE_WARP)
+    if(USE_WARP)
         % Set capture lengths
         txLength = length(txData);
         RXLength    = txLength+1000;
@@ -202,6 +208,7 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
         
         % Set the sample indices of the payload symbols and preamble
         payload_ind = lts_peaks(max(lts_second_peak_index))+32;
+        payload_ind_array = [payload_ind_array, payload_ind];
         lts_ind = payload_ind-160;
         
         if(DO_APPLY_CFO_CORRECTION)
