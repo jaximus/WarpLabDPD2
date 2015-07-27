@@ -6,16 +6,16 @@ clc;
 % set(0,'defaultlinelinewidth',1.5)
 
 %% Simulation Paramters %%
-TxScenario                          =   3;     % 1- Contigious Single CC
-                                               % 2- Multi-Cluster Single CC
-                                               % 3- Intra-Band CA Two CC 
-N_symbols                           =  4000;    % No of OFDM Symbols for Simulation
-TxSignalType                        =   2;     % 1- OFDM for DL Transmission
-                                               % 2- SCFDMA for UL Transmission
-ModulationType                      =   1;     % 1- QPSK
-                                               % 2- 16-QAM  
-                                               % 3- 64-QAM
-POWER_PLOT_1MHZ                     =   0;     % Use 1 MHz power plot
+TxScenario                          =   3;          % 1- Contigious Single CC
+                                                    % 2- Multi-Cluster Single CC
+                                                    % 3- Intra-Band CA Two CC 
+N_symbols                           =  2000;        % No of OFDM Symbols for Simulation
+TxSignalType                        =   2;          % 1- OFDM for DL Transmission
+                                                    % 2- SCFDMA for UL Transmission
+ModulationType                      =   1;          % 1- QPSK
+                                                    % 2- 16-QAM  
+                                                    % 3- 64-QAM
+POWER_PLOT_1MHZ                     =   0;          % Use 1 MHz power plot
 
 % RF and PA paramters
 Pout_dBm                            =   21;         % Desired Tx Output Power after the PA in dBm    
@@ -26,14 +26,14 @@ MemoryLessDPD                       =   1;          % 1- MemoryLess DPD
                                                     % 0- MemoryDPD
 
 DoTraining = 1;                                     %To set alpha yourself. No training                                               
-IM3_BlockDecorrDPD_Coeffs           = 0.5+0.125*i;  %For Memoryless Pretraining
+IM3_BlockDecorrDPD_Coeffs           = 1.6+1.5*i;    %For Memoryless Pretraining
 
-DPD_LearningBlockSize  = 100;                         % Decorrelating DPD Learning Block size
-DPD_FilteringBlockSize = 1000;                       % Decorrelating DPD Filtering Block size
+DPD_LearningBlockSize  = 100;                       % Decorrelating DPD Learning Block size
+DPD_FilteringBlockSize = 1000;                      % Decorrelating DPD Filtering Block size
 NumSamples = 5000000;                               % Total number of samples used for learning
-Mu = 4;                                             %LMS Gain
+Mu = 2;                                             %LMS Gain
 
-ScalingForPA = 10;                              %Changes magnitude of PA input signal
+ScalingForPA = 4.2;                                 %Changes magnitude of PA input signal
 
 %% Power Amplifier Model
 PA_Power_Measured = 23; % The Tx power at which the PA paramters were measured at
@@ -86,7 +86,7 @@ MAX_TX_LEN     = 2^25;                 % 2^14 =    16384 --> Max TX / RX length 
 % RX variables
 USE_AGC        = false;
 ManualRxGainRF = 2;                    % Rx RF Gain in [1:3] (ignored if USE_AGC is true)
-ManualRxGainBB = 9;                   % Rx Baseband Gain in [0:31] (ignored if USE_AGC is true)
+ManualRxGainBB = 8;                   % Rx Baseband Gain in [0:31] (ignored if USE_AGC is true)
 
 % TX variables
 BB_GAIN = 3;                           %Must be integer in [0,1,2,3] for approx ![-5, -3, -1.5, 0]dB baseband gain
@@ -217,7 +217,6 @@ wl_basebandCmd(nodes, 'RF_ALL', 'tx_rx_buff_dis');
 wl_interfaceCmd(nodes, 'RF_ALL', 'tx_rx_dis');
 
 PA_OutputSignal = rx_IQ;
-
 %% Decorrelating DPD
 % Generate the IM3 third order basis function
 IM3GeneratedSignal = (conj(CC2).*(CC1.^2));

@@ -7,6 +7,7 @@ NumberOfBasisFunctions = length(IM3_Basis_Orthogonal(:,1));
 % Plotting variables
 %iq_range    = 1;                       % Plots IQ values in the range:  [-1, 1]
 %rssi_range  = 1024;                    % Plots RSSI values in the range:  [0, 1024] 
+USE_PREAMBLE            = 1;
 LTS_CORR_THRESH         = 0.8;         % Normalized threshold for LTS correlation
 DO_APPLY_CFO_CORRECTION = 1;           % Enable CFO estimation/correction
 FFT_OFFSET              = 4;
@@ -129,14 +130,20 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     
     % Broadcast Block using WARPLAB
     payload = PA_InBlock;
-    txData  = vertcat(preamble.', payload);
+    
+    if(USE_PREAMBLE)
+        txData  = vertcat(preamble.', payload);
+    else
+        txData  = payload;
+    end
+    
     txLength = length(txData);
     
     % Set capture lengths
     RXLength    = txLength+1000;
     
     wl_basebandCmd(nodes, 'tx_length', txLength);
-    wl_basebandCmd(nodes, 'rx_length', txLength+1000);
+    wl_basebandCmd(nodes, 'rx_length', RXLength);
     
     % Transmit IQ data to the TX node
     wl_basebandCmd(node_tx, [RF_TX], 'write_IQ', txData(:));
@@ -157,7 +164,7 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     
     % Read the IQ and RSSI data from the RX node
     rx_IQ    = wl_basebandCmd(node_rx, [RF_RX], 'read_IQ', 0, RXLength);
-    rx_gains = wl_basebandCmd(node_rx, [RF_RX], 'agc_state');
+    %rx_IQ = detrend(rx_IQ);
     
     % Disable the buffers and RF interfaces for TX / RX
     wl_basebandCmd(nodes, 'RF_ALL', 'tx_rx_buff_dis');
@@ -165,7 +172,7 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     
     
     %% Correlate for LTS
-    
+    if(USE_PREAMBLE)
     % Complex cross correlation of Rx waveform with time-domain LTS
     lts_corr = abs(conv(conj(fliplr(lts_t)), sign(rx_IQ)));
     
@@ -221,6 +228,9 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     
     % Extract the payload samples (integral number of OFDM symbols following preamble)
     payload_vec = rx_dec_cfo_corr(payload_ind : payload_ind+length(payload)-1);
+    else
+        payload_vec = (warp_PA_delay:warp_PA_delay+DPD_FilteringBlockSize-1)
+    end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Visualize results FOR DEBUGGING PURPOSES 

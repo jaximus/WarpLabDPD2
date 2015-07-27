@@ -6,7 +6,9 @@ NumberOfBasisFunctions = length(IM3_Basis_Orthogonal(:,1));
 
 % Plotting variables
 %iq_range    = 1;                       % Plots IQ values in the range:  [-1, 1]
-%rssi_range  = 1024;                    % Plots RSSI values in the range:  [0, 1024] 
+%rssi_range  = 1024;                    % Plots RSSI values in the range:  [0, 1024]
+USE_PREAMBLE            = 1;
+warp_PA_delay           = 44;          %Delat only used if USE_PREAMBLE = 0
 LTS_CORR_THRESH         = 0.8;         % Normalized threshold for LTS correlation
 DO_APPLY_CFO_CORRECTION = 1;           % Enable CFO estimation/correction
 FFT_OFFSET              = 4;
@@ -129,7 +131,13 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     
     % Broadcast Block using WARPLAB
     payload = PA_InBlock;
-    txData  = vertcat(preamble.', payload);
+    
+    if(USE_PREAMBLE)
+        txData  = vertcat(preamble.', payload);
+    else
+        txData  = payload;
+    end
+    
     txLength = length(txData);
     
     % Set capture lengths
@@ -157,7 +165,7 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     
     % Read the IQ and RSSI data from the RX node
     rx_IQ    = wl_basebandCmd(node_rx, [RF_RX], 'read_IQ', 0, RXLength);
-    rx_gains = wl_basebandCmd(node_rx, [RF_RX], 'agc_state');
+    %rx_IQ = detrend(rx_IQ);
     
     % Disable the buffers and RF interfaces for TX / RX
     wl_basebandCmd(nodes, 'RF_ALL', 'tx_rx_buff_dis');
@@ -165,81 +173,82 @@ for Sample = 1:DPD_FilteringBlockSize:NumSamples
     
     
     %% Correlate for LTS
-    
-    % Complex cross correlation of Rx waveform with time-domain LTS
-    lts_corr = abs(conv(conj(fliplr(lts_t)), sign(rx_IQ)));
-    
-    % Skip early and late samples
-    lts_corr = lts_corr(32:end-32);
-    
-    % Find all correlation peaks
-    lts_peaks = find(lts_corr > LTS_CORR_THRESH*max(lts_corr));
-    
-    % Select best candidate correlation peak as LTS-payload boundary
-    [LTS1, LTS2] = meshgrid(lts_peaks,lts_peaks);
-    [lts_second_peak_index,y] = find(LTS2-LTS1 == length(lts_t));
-    
-    % Stop if no valid correlation peak was found
-    if(isempty(lts_second_peak_index))
-        fprintf('No LTS Correlation Peaks Found!\n');
-        return;
-    end
-    
-    % Set the sample indices of the payload symbols and preamble
-    payload_ind = lts_peaks(max(lts_second_peak_index))+32;
-    lts_ind = payload_ind-160;
-    
-    if(DO_APPLY_CFO_CORRECTION)
-        %Extract LTS (not yet CFO corrected)
-        rx_lts = rx_IQ(lts_ind : lts_ind+159);
+    if(USE_PREAMBLE)
+        % Complex cross correlation of Rx waveform with time-domain LTS
+        lts_corr = abs(conv(conj(fliplr(lts_t)), sign(rx_IQ)));
+        
+        % Skip early and late samples
+        lts_corr = lts_corr(32:end-32);
+        
+        % Find all correlation peaks
+        lts_peaks = find(lts_corr > LTS_CORR_THRESH*max(lts_corr));
+        
+        % Select best candidate correlation peak as LTS-payload boundary
+        [LTS1, LTS2] = meshgrid(lts_peaks,lts_peaks);
+        [lts_second_peak_index,y] = find(LTS2-LTS1 == length(lts_t));
+        
+        % Stop if no valid correlation peak was found
+        if(isempty(lts_second_peak_index))
+            fprintf('No LTS Correlation Peaks Found!\n');
+            return;
+        end
+        
+        % Set the sample indices of the payload symbols and preamble
+        payload_ind = lts_peaks(max(lts_second_peak_index))+32;
+        lts_ind = payload_ind-160;
+        
+        if(DO_APPLY_CFO_CORRECTION)
+            %Extract LTS (not yet CFO corrected)
+            rx_lts = rx_IQ(lts_ind : lts_ind+159);
+            rx_lts1 = rx_lts(-64+-FFT_OFFSET + [97:160]);
+            rx_lts2 = rx_lts(-FFT_OFFSET + [97:160]);
+            
+            %Calculate coarse CFO est
+            rx_cfo_est_lts = mean(unwrap(angle(rx_lts1 .* conj(rx_lts2))));
+            rx_cfo_est_lts = rx_cfo_est_lts/(2*pi*64);
+        else
+            rx_cfo_est_lts = 0;
+        end
+        
+        % Apply CFO correction to raw Rx waveform
+        rx_cfo_corr_t = exp(1i*2*pi*rx_cfo_est_lts*[0:length(rx_IQ)-1]);
+        rx_dec_cfo_corr = rx_IQ .* rx_cfo_corr_t.';
+        
+        % Re-extract LTS for channel estimate
+        rx_lts = rx_dec_cfo_corr(lts_ind : lts_ind+159);
         rx_lts1 = rx_lts(-64+-FFT_OFFSET + [97:160]);
         rx_lts2 = rx_lts(-FFT_OFFSET + [97:160]);
         
-        %Calculate coarse CFO est
-        rx_cfo_est_lts = mean(unwrap(angle(rx_lts1 .* conj(rx_lts2))));
-        rx_cfo_est_lts = rx_cfo_est_lts/(2*pi*64);
+        rx_lts1_f = fft(rx_lts1);
+        rx_lts2_f = fft(rx_lts2);
+        
+        % Calculate channel estimate
+        rx_H_est = lts_f .* (rx_lts1_f.' + rx_lts2_f.')/2;
+        
+        % Extract the payload samples
+        payload_vec = rx_dec_cfo_corr(payload_ind : payload_ind+length(payload)-1);
     else
-        rx_cfo_est_lts = 0;
+        payload_vec = rx_IQ(warp_PA_delay:warp_PA_delay+DPD_FilteringBlockSize-1)
     end
     
-    % Apply CFO correction to raw Rx waveform
-    rx_cfo_corr_t = exp(1i*2*pi*rx_cfo_est_lts*[0:length(rx_IQ)-1]);
-    rx_dec_cfo_corr = rx_IQ .* rx_cfo_corr_t.';
-    
-    % Re-extract LTS for channel estimate
-    rx_lts = rx_dec_cfo_corr(lts_ind : lts_ind+159);
-    rx_lts1 = rx_lts(-64+-FFT_OFFSET + [97:160]);
-    rx_lts2 = rx_lts(-FFT_OFFSET + [97:160]);
-    
-    rx_lts1_f = fft(rx_lts1);
-    rx_lts2_f = fft(rx_lts2);
-    
-    % Calculate channel estimate
-    rx_H_est = lts_f .* (rx_lts1_f.' + rx_lts2_f.')/2;
-    
-    %% Rx payload processing
-    
-    % Extract the payload samples (integral number of OFDM symbols following preamble)
-    payload_vec = rx_dec_cfo_corr(payload_ind : payload_ind+length(payload)-1);
-    
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Visualize results FOR DEBUGGING PURPOSES 
+    % Visualize results FOR DEBUGGING PURPOSES
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
-%     figure(1);clf;
-%     ax(1) = subplot(2,1,1);
-%     plot(0:(length(rx_IQ)-1),real(rx_IQ))
-%     xlabel('Sample Index')
-%     title('Received I')
-%     axis([1 RXLength -iq_range iq_range])
-%     
-%     ax(2) = subplot(2,1,2);
-%     plot(0:(length(rx_IQ)-1),imag(rx_IQ))
-%     xlabel('Sample Index')
-%     title('Received Q')
-%     axis([1 RXLength -iq_range iq_range])
-%     
-%     linkaxes(ax,'xy')
+    %     figure(1);clf;
+    %     ax(1) = subplot(2,1,1);
+    %     plot(0:(length(rx_IQ)-1),real(rx_IQ))
+    %     xlabel('Sample Index')
+    %     title('Received I')
+    %     axis([1 RXLength -iq_range iq_range])
+    %
+    %     ax(2) = subplot(2,1,2);
+    %     plot(0:(length(rx_IQ)-1),imag(rx_IQ))
+    %     xlabel('Sample Index')
+    %     title('Received Q')
+    %     axis([1 RXLength -iq_range iq_range])
+    %
+    %     linkaxes(ax,'xy')
     
     PA_OutBlock = payload_vec;
     
